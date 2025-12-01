@@ -42,7 +42,7 @@ echo -e "${BLUE}🚀 Buildando backend...${NC}"
 pnpm run build:server
 
 # Verificar se builds foram criados
-if [ ! -d "dist/client" ]; then
+if [ ! -d "dist/public" ]; then
     echo -e "${RED}❌ Build do cliente falhou!${NC}"
     exit 1
 fi
@@ -55,7 +55,7 @@ fi
 echo -e "${GREEN}✅ Build concluído com sucesso!${NC}"
 echo ""
 echo -e "${BLUE}📊 Estatísticas:${NC}"
-echo "  - Cliente: $(du -sh dist/client | cut -f1)"
+echo "  - Cliente: $(du -sh dist/public | cut -f1)"
 echo "  - Servidor: $(du -sh dist/server | cut -f1)"
 echo ""
 echo -e "${GREEN}🎉 Projeto pronto para deploy!${NC}"
