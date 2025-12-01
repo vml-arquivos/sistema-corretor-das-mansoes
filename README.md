@@ -136,7 +136,7 @@ corretordasmansoes/
 
 - Node.js 22+
 - pnpm 9+
-- MySQL 8+ (ou Docker)
+- PostgreSQL 16+ (ou Docker)
 
 ### Desenvolvimento Local
 
