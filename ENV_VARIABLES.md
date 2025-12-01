@@ -4,16 +4,15 @@ Este documento lista todas as variáveis de ambiente necessárias para o projeto
 
 ## 📋 Variáveis Obrigatórias
 
-### Banco de Dados
+### Banco de Dados (PostgreSQL)
 
 | Variável | Descrição | Exemplo |
 |----------|-----------|---------|
-| `DATABASE_URL` | URL de conexão MySQL completa | `mysql://user:pass@host:3306/db` |
-| `MYSQL_ROOT_PASSWORD` | Senha do root MySQL (Docker) | `rootpassword` |
-| `MYSQL_DATABASE` | Nome do banco de dados | `corretordasmansoes` |
-| `MYSQL_USER` | Usuário do banco | `corretor` |
-| `MYSQL_PASSWORD` | Senha do usuário | `corretorpassword` |
-| `MYSQL_PORT` | Porta do MySQL | `3306` |
+| `DATABASE_URL` | URL de conexão PostgreSQL completa | `postgresql://user:pass@host:5432/db` |
+| `POSTGRES_PASSWORD` | Senha do usuário PostgreSQL (Docker) | `corretorpassword` |
+| `POSTGRES_DB` | Nome do banco de dados | `corretordasmansoes` |
+| `POSTGRES_USER` | Usuário do banco | `corretor` |
+| `POSTGRES_PORT` | Porta do PostgreSQL | `5432` |
 
 ### Aplicação
 

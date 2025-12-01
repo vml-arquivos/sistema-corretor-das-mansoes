@@ -1,5 +1,6 @@
 import { eq, desc, and, or, like, gte, lte, sql } from "drizzle-orm";
-import { drizzle } from "drizzle-orm/mysql2";
+import { drizzle } from "drizzle-orm/postgres-js";
+import postgres from "postgres";
 import { 
   InsertUser, 
   users, 
@@ -58,15 +59,18 @@ import {
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
+let _client: ReturnType<typeof postgres> | null = null;
 
 // Lazily create the drizzle instance so local tooling can run without a DB.
 export async function getDb() {
   if (!_db && process.env.DATABASE_URL) {
     try {
-      _db = drizzle(process.env.DATABASE_URL);
+      _client = postgres(process.env.DATABASE_URL);
+      _db = drizzle(_client);
     } catch (error) {
       console.warn("[Database] Failed to connect:", error);
       _db = null;
+      _client = null;
     }
   }
   return _db;
@@ -126,9 +130,11 @@ export async function upsertUser(user: InsertUser): Promise<void> {
       updateSet.lastSignedIn = new Date();
     }
 
-    await db.insert(users).values(values).onDuplicateKeyUpdate({
-      set: updateSet,
-    });
+    await db.insert(users).values(values)
+      .onConflictDoUpdate({
+        target: users.openId,
+        set: updateSet,
+      });
   } catch (error) {
     console.error("[Database] Failed to upsert user:", error);
     throw error;
@@ -155,10 +161,8 @@ export async function createProperty(property: InsertProperty) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
 
-  const result = await db.insert(properties).values(property);
-  const insertId = Number(result[0].insertId);
-  const created = await getPropertyById(insertId);
-  return created!;
+  const result = await db.insert(properties).values(property).returning();
+  return result[0]!;
 }
 
 export async function updateProperty(id: number, property: Partial<InsertProperty>) {
@@ -244,10 +248,8 @@ export async function createLead(lead: InsertLead) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
 
-  const result = await db.insert(leads).values(lead);
-  const insertId = Number(result[0].insertId);
-  const created = await getLeadById(insertId);
-  return created!;
+  const result = await db.insert(leads).values(lead).returning();
+  return result[0]!;
 }
 
 export async function updateLead(id: number, lead: Partial<InsertLead>) {
@@ -318,10 +320,8 @@ export async function createInteraction(interaction: InsertInteraction) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
 
-  const result = await db.insert(interactions).values(interaction);
-  const insertId = Number(result[0].insertId);
-  const created = await db.select().from(interactions).where(eq(interactions.id, insertId)).limit(1);
-  return created[0]!;
+  const result = await db.insert(interactions).values(interaction).returning();
+  return result[0]!;
 }
 
 export async function getInteractionsByLeadId(leadId: number) {
@@ -358,10 +358,8 @@ export async function createBlogPost(post: InsertBlogPost) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
 
-  const result = await db.insert(blogPosts).values(post);
-  const insertId = Number(result[0].insertId);
-  const created = await getBlogPostById(insertId);
-  return created!;
+  const result = await db.insert(blogPosts).values(post).returning();
+  return result[0]!;
 }
 
 export async function updateBlogPost(id: number, post: Partial<InsertBlogPost>) {
@@ -442,10 +440,8 @@ export async function createBlogCategory(category: InsertBlogCategory) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
 
-  const result = await db.insert(blogCategories).values(category);
-  const insertId = Number(result[0].insertId);
-  const created = await db.select().from(blogCategories).where(eq(blogCategories.id, insertId)).limit(1);
-  return created[0]!;
+  const result = await db.insert(blogCategories).values(category).returning();
+  return result[0]!;
 }
 
 export async function getAllBlogCategories() {
@@ -489,10 +485,8 @@ export async function createPropertyImage(image: InsertPropertyImage) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
 
-  const result = await db.insert(propertyImages).values(image);
-  const insertId = Number(result[0].insertId);
-  const created = await db.select().from(propertyImages).where(eq(propertyImages.id, insertId)).limit(1);
-  return created[0]!;
+  const result = await db.insert(propertyImages).values(image).returning();
+  return result[0]!;
 }
 
 export async function getPropertyImages(propertyId: number) {
@@ -552,9 +546,8 @@ export async function createMessageBuffer(data: InsertMessageBuffer): Promise<Me
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   
-  const result = await db.insert(messageBuffer).values(data);
-  const inserted = await db.select().from(messageBuffer).where(eq(messageBuffer.id, Number(result[0].insertId))).limit(1);
-  return inserted[0]!;
+  const result = await db.insert(messageBuffer).values(data).returning();
+  return result[0]!;
 }
 
 export async function getMessagesByPhone(phone: string): Promise<MessageBuffer[]> {
@@ -576,9 +569,8 @@ export async function saveAiContext(data: InsertAiContextStatus): Promise<AiCont
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   
-  const result = await db.insert(aiContextStatus).values(data);
-  const inserted = await db.select().from(aiContextStatus).where(eq(aiContextStatus.id, Number(result[0].insertId))).limit(1);
-  return inserted[0]!;
+  const result = await db.insert(aiContextStatus).values(data).returning();
+  return result[0]!;
 }
 
 export async function getAiHistoryBySession(sessionId: string): Promise<AiContextStatus[]> {
@@ -601,9 +593,8 @@ export async function createClientInterest(data: InsertClientInterest): Promise<
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   
-  const result = await db.insert(clientInterests).values(data);
-  const inserted = await db.select().from(clientInterests).where(eq(clientInterests.id, Number(result[0].insertId))).limit(1);
-  return inserted[0]!;
+  const result = await db.insert(clientInterests).values(data).returning();
+  return result[0]!;
 }
 
 export async function getClientInterests(clientId: number): Promise<ClientInterest[]> {
@@ -625,9 +616,8 @@ export async function createWebhookLog(data: InsertWebhookLog): Promise<WebhookL
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   
-  const result = await db.insert(webhookLogs).values(data);
-  const inserted = await db.select().from(webhookLogs).where(eq(webhookLogs.id, Number(result[0].insertId))).limit(1);
-  return inserted[0]!;
+  const result = await db.insert(webhookLogs).values(data).returning();
+  return result[0]!;
 }
 
 export async function getWebhookLogs(limit: number = 100): Promise<WebhookLog[]> {
@@ -679,9 +669,8 @@ export async function upsertLeadFromWhatsApp(data: {
       notes: data.budgetRange ? `Orçamento: ${data.budgetRange}\n${data.message || ''}` : data.message,
     };
     
-    const result = await db.insert(leads).values(newLead);
-    const inserted = await db.select().from(leads).where(eq(leads.id, Number(result[0].insertId))).limit(1);
-    return inserted[0]!;
+    const result = await db.insert(leads).values(newLead).returning();
+    return result[0]!;
   }
 }
 
@@ -693,10 +682,8 @@ export async function createOwner(owner: InsertOwner): Promise<Owner> {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
 
-  const result = await db.insert(owners).values(owner);
-  const insertId = Number(result[0].insertId);
-  const created = await db.select().from(owners).where(eq(owners.id, insertId)).limit(1);
-  return created[0]!;
+  const result = await db.insert(owners).values(owner).returning();
+  return result[0]!;
 }
 
 export async function getAllOwners(): Promise<Owner[]> {

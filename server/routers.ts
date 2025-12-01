@@ -1134,15 +1134,13 @@ const analyticsRouter = router({
         medium: input.medium,
         campaignId: input.campaignId,
         budget: input.budget,
-        startDate: input.startDate ? new Date(input.startDate) : undefined,
-        endDate: input.endDate ? new Date(input.endDate) : undefined,
+        startDate: input.startDate,
+        endDate: input.endDate,
         notes: input.notes,
         clicks: 0,
         impressions: 0,
         conversions: 0,
         active: true,
-        createdAt: new Date(),
-        updatedAt: new Date(),
       });
       
       return { success: true };
@@ -1201,12 +1199,19 @@ const financialRouter = router({
       if (!db) throw new Error("Database not available");
       
       await db.insert(transactions).values({
-        ...input,
-        paymentDate: input.paymentDate ? new Date(input.paymentDate) : undefined,
-        dueDate: input.dueDate ? new Date(input.dueDate) : undefined,
+        type: input.type,
+        category: input.category,
+        amount: input.amount,
+        description: input.description,
+        propertyId: input.propertyId,
+        leadId: input.leadId,
+        ownerId: input.ownerId,
+        status: input.status,
+        paymentMethod: input.paymentMethod,
+        paymentDate: input.paymentDate,
+        dueDate: input.dueDate,
+        notes: input.notes,
         currency: 'BRL',
-        createdAt: new Date(),
-        updatedAt: new Date(),
       });
       
       return { success: true };
